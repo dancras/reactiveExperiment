@@ -1,0 +1,17 @@
+{
+  "name": "frpExperiment",
+  "version": "0.0.0",
+  "description": "",
+  "main": "src/lib",
+  "scripts": {
+    "test": "mocha test/all.js"
+  },
+  "author": "",
+  "license": "Unlicense",
+  "devDependencies": {
+    "mocha": "~2.2.1",
+    "chai": "~2.1.1",
+    "sinon": "~1.13.0",
+    "sinon-chai": "~2.7.0"
+  }
+}
