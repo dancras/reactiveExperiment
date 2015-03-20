@@ -132,3 +132,180 @@ describe('Data', function() {
     });
 
 });
+
+describe('Junction', function() {
+
+    it('should equal the value returned by its evaluator', function() {
+
+        /* Arrange */
+        var example = lib.junction(function() {
+                return 'foo';
+            }),
+            result;
+
+        /* Act */
+        result = example();
+
+        /* Assert */
+        result.should.equal('foo');
+
+    });
+
+    describe('.watch()', function() {
+
+        it('should send its value its watchers', function() {
+
+            /* Arrange */
+            var example = lib.junction(function() {
+                    return 'foo';
+                }),
+                spyA = sinon.spy(),
+                spyB = sinon.spy();
+
+            /* Act */
+            example.watch(spyA);
+            example.watch(spyB);
+
+            /* Assert */
+            spyA.firstCall.should.have.been.calledWithExactly('foo');
+            spyB.firstCall.should.have.been.calledWithExactly('foo');
+
+        });
+
+        it('should re-evaluate when data it depends on changes', function() {
+
+            /* Arrange */
+            var data = lib.data('foo'),
+                example = lib.junction(function() {
+                    return data();
+                }),
+                spyA = sinon.spy();
+
+            example.watch(spyA);
+
+            /* Act */
+            data('bar');
+
+            /* Assert */
+            spyA.secondCall.should.have.been.calledWithExactly('bar');
+
+        });
+
+        it('should re-evaluate when a junction it depends on changes', function() {
+
+            /* Arrange */
+            var data = lib.data('foo'),
+                junction = lib.junction(function() {
+                    return data() + 'bar';
+                }),
+                example = lib.junction(function() {
+                    return junction();
+                }),
+                spyA = sinon.spy();
+
+            example.watch(spyA);
+
+            /* Act */
+            data('bar');
+
+            /* Assert */
+            spyA.secondCall.should.have.been.calledWithExactly('barbar');
+
+        });
+
+        it('should optimise a simple dependency conflict', function() {
+
+            /* Arrange */
+            var data = lib.data('foo'),
+                junction = lib.junction(function() {
+                    return data() + 'bar';
+                }),
+                example = lib.junction(function() {
+                    return data() + junction();
+                }),
+                spyA = sinon.spy();
+
+            example.watch(spyA);
+
+            /* Act */
+            data('bar');
+
+            /* Assert */
+            spyA.secondCall.should.have.been.calledWithExactly('barbarbar');
+            spyA.callCount.should.equal(2);
+
+        });
+
+        it('should optimise a more complicated dependency conflict', function() {
+
+            /* Arrange */
+            var a = lib.data('a'),
+                b = lib.junction(function() {
+                    return a() + 'b';
+                }),
+                c = lib.junction(function() {
+                    return a() + 'c';
+                }),
+                d = lib.junction(function() {
+                    return a() + 'd';
+                }),
+                example = lib.junction(function() {
+                    return a() + b() + c() + d() + 'e';
+                }),
+                spyA = sinon.spy();
+
+            example.watch(spyA);
+
+            /* Act */
+            a('aa');
+
+            /* Assert */
+            spyA.secondCall.should.have.been.calledWithExactly('aaaabaacaade');
+            spyA.callCount.should.equal(2);
+
+        });
+
+        it('should optimise an insane dependency graph', function() {
+
+            /* Arrange */
+            var a = lib.data('a'),
+                b = lib.junction(function() {
+                    return a() + 'b';
+                }), // aab
+                c = lib.junction(function() {
+                    return a() + 'c';
+                }), // aac
+                d = lib.junction(function() {
+                    return b() + c() + 'd';
+                }), // aabaacd
+                e = lib.junction(function() {
+                    return a() + 'e';
+                }), // aae
+                f = lib.junction(function() {
+                    return a() + 'f';
+                }), // aaf
+                g = lib.junction(function() {
+                    return e() + f() + 'g';
+                }), // aaeaafg
+                h = lib.junction(function() {
+                    return c() + g() + d() + 'h';
+                }), // aacaaeaafgaabaacdh
+                example = lib.junction(function() {
+                    return a() + h() + b() + f();
+                }),
+                spyA = sinon.spy();
+
+            example.watch(spyA);
+
+            /* Act */
+            a('aa');
+
+            /* Assert */
+            spyA.secondCall.should.have.been.calledWithExactly('aaaacaaeaafgaabaacdhaabaaf');
+            spyA.callCount.should.equal(2);
+
+        });
+
+    });
+
+});
