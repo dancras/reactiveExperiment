@@ -271,25 +271,25 @@ describe('Junction', function() {
             var a = lib.data('a'),
                 b = lib.junction(function() {
                     return a() + 'b';
-                }), // aab
+                }),
                 c = lib.junction(function() {
                     return a() + 'c';
-                }), // aac
+                }),
                 d = lib.junction(function() {
                     return b() + c() + 'd';
-                }), // aabaacd
+                }),
                 e = lib.junction(function() {
                     return a() + 'e';
-                }), // aae
+                }),
                 f = lib.junction(function() {
                     return a() + 'f';
-                }), // aaf
+                }),
                 g = lib.junction(function() {
                     return e() + f() + 'g';
-                }), // aaeaafg
+                }),
                 h = lib.junction(function() {
                     return c() + g() + d() + 'h';
-                }), // aacaaeaafgaabaacdh
+                }),
                 example = lib.junction(function() {
                     return a() + h() + b() + f();
                 }),
