@@ -1,6 +1,7 @@
 var evaluating = [],
     watcherQueue = [],
-    currentTick = 0;
+    currentTick = 0,
+    buffering = false;
 
 function addWatchersToQueue(watchers) {
     watcherQueue = watchers.concat(watcherQueue);
@@ -27,8 +28,11 @@ exports.data = function(initialValue) {
             currentValue = newValue;
 
             addWatchersToQueue(watchers);
-            currentTick++;
-            processQueue();
+
+            if (!buffering) {
+                currentTick++;
+                processQueue();
+            }
 
             return self;
         }
@@ -175,6 +179,13 @@ exports.junction = function(evaluator) {
 
     return self;
 
+};
+
+exports.buffered = function(writer) {
+    buffering = true;
+    writer();
+    currentTick++;
+    processQueue();
 };
 
 exports.effects = function() {};
