@@ -306,33 +306,37 @@ describe('Junction', function() {
 
         });
 
-        it('should be possible to update multiple datas at once', function() {
+    });
 
-            /* Arrange */
-            var a = lib.data('a'),
-                b = lib.data('b'),
-                c = lib.data('c'),
-                example = lib.junction(function() {
-                    return a() + b() + c();
-                }),
-                spyA = sinon.spy();
+});
 
-            example.watch(spyA);
+describe('bufferedUpdate', function() {
 
-            /* Act */
-            lib.buffered(function() {
+    it('should make it possible to update multiple datas at once', function() {
 
-                a('aa');
-                b('bb');
-                c('cc');
+        /* Arrange */
+        var a = lib.data('a'),
+            b = lib.data('b'),
+            c = lib.data('c'),
+            example = lib.junction(function() {
+                return a() + b() + c();
+            }),
+            spyA = sinon.spy();
 
-            });
+        example.watch(spyA);
 
-            /* Assert */
-            spyA.secondCall.should.have.been.calledWithExactly('aabbcc');
-            spyA.callCount.should.equal(2);
+        /* Act */
+        lib.bufferedUpdate(function() {
+
+            a('aa');
+            b('bb');
+            c('cc');
 
         });
+
+        /* Assert */
+        spyA.secondCall.should.have.been.calledWithExactly('aabbcc');
+        spyA.callCount.should.equal(2);
 
     });
 

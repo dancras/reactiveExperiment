@@ -181,7 +181,7 @@ exports.junction = function(evaluator) {
 
 };
 
-exports.buffered = function(writer) {
+exports.bufferedUpdate = function(writer) {
     buffering = true;
     writer();
     currentTick++;
