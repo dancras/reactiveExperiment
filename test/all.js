@@ -151,6 +151,44 @@ describe('Junction', function() {
 
     });
 
+    it('should not re-evaluate every time it is accessed', function() {
+
+        /* Arrange */
+        var spy = sinon.spy(),
+            example = lib.junction(function() {
+                spy();
+                return 'foo';
+            });
+
+        /* Act */
+        example();
+        example();
+
+        /* Assert */
+        spy.callCount.should.equal(1);
+
+    });
+
+    it('should not re-evaluate if unrelated data changes', function() {
+
+        /* Arrange */
+        var data = lib.data('foo'),
+            spy = sinon.spy(),
+            example = lib.junction(function() {
+                spy();
+                return 'foo';
+            });
+
+        /* Act */
+        example();
+        data('bar');
+        example();
+
+        /* Assert */
+        spy.callCount.should.equal(1);
+
+    });
+
     describe('.watch()', function() {
 
         it('should send its value its watchers', function() {
@@ -211,6 +249,46 @@ describe('Junction', function() {
             /* Assert */
             spyA.secondCall.should.have.been.calledWithExactly('barbar');
 
+        });
+
+        it('should not re-evaluate when data it depends on updates to the same value', function() {
+
+            /* Arrange */
+            var data = lib.data('foo'),
+                spy = sinon.spy(),
+                example = lib.junction(function() {
+                    spy();
+                    return data();
+                });
+
+            example.watch(function() {});
+
+            /* Act */
+            data('foo');
+
+            /* Assert */
+            spy.callCount.should.equal(1);
+        });
+
+        it('should not re-evaluate when a junction it depends on updates to the same value', function() {
+
+            /* Arrange */
+            var data = lib.data('foo'),
+                junction = lib.junction(function() {
+                    return data().length;
+                }),
+                example = lib.junction(function() {
+                    return junction();
+                }),
+                spyA = sinon.spy();
+
+            example.watch(spyA);
+
+            /* Act */
+            data('bar');
+
+            /* Assert */
+            spyA.callCount.should.equal(1);
         });
 
         it('should optimise a simple dependency conflict', function() {
@@ -310,7 +388,7 @@ describe('Junction', function() {
 
 });
 
-describe('bufferedUpdate', function() {
+describe('bufferedUpdate()', function() {
 
     it('should make it possible to update multiple datas at once', function() {
 

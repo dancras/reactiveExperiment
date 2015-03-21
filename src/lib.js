@@ -47,7 +47,15 @@ exports.data = function(initialValue) {
     self.watch = function(callback, initial) {
 
         var watcher = {
+            previousValue: currentValue,
             callback: function() {
+
+                if (currentValue === this.previousValue) {
+                    return;
+                }
+
+                this.previousValue = currentValue;
+
                 callback(currentValue);
             },
             isActive: true
@@ -56,7 +64,7 @@ exports.data = function(initialValue) {
         watchers.push(watcher);
 
         if (initial !== false) {
-            watcher.callback();
+            callback(currentValue);
         }
 
         return function unwatch() {
@@ -89,7 +97,8 @@ function containsWhere(list, predicate) {
 
 exports.junction = function(evaluator) {
 
-    var watchers = [],
+    var currentValue,
+        watchers = [],
         dependencies = [];
 
     var self = function() {
@@ -104,6 +113,10 @@ exports.junction = function(evaluator) {
     self._value = function() {
 
         var newValue;
+
+        if (self._isCacheWarm) {
+            return currentValue;
+        }
 
         dependencies.forEach(function(dep) {
             dep.unwatch();
@@ -122,15 +135,29 @@ exports.junction = function(evaluator) {
 
         self.tick = currentTick;
 
+        currentValue = newValue;
+        self._isCacheWarm = true;
+
         return newValue;
 
     };
+
+    self._isCacheWarm = false;
 
     self.watch = function(callback, initial) {
 
         var watcher = {
             callback: function() {
-                callback(self._value());
+
+                var newValue = self._value();
+
+                if (newValue === this.previousValue) {
+                    return;
+                }
+
+                this.previousValue = newValue;
+
+                callback(newValue);
             },
             isActive: true
         };
@@ -169,6 +196,7 @@ exports.junction = function(evaluator) {
 
         dependencies.unshift({
             unwatch: dependency.watch(function() {
+                self._isCacheWarm = false;
                 addWatchersToQueue(watchers);
                 processQueue();
             }, false),
@@ -181,9 +209,9 @@ exports.junction = function(evaluator) {
 
 };
 
-exports.bufferedUpdate = function(writer) {
+exports.bufferedUpdate = function(updateFn) {
     buffering = true;
-    writer();
+    updateFn();
     currentTick++;
     processQueue();
 };
